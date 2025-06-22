@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mandelbrot Zoom 8K</title>
+  <style>
+    html, body { margin: 0; overflow: hidden; background: black; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script src="mandelbrot.js"></script>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let zoom = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let startX, startY;
+
+    function redraw() {
+      const width = Module._get_width();
+      const height = Module._get_height();
+      canvas.width = width;
+      canvas.height = height;
+
+      const generate = Module.cwrap('generate_mandelbrot', 'number', ['number', 'number', 'number']);
+      const ptr = generate(zoom, offsetX, offsetY);
+
+      const image = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, width * height * 4);
+      const imgData = new ImageData(image, width, height);
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function toComplexCoords(x, y) {
+      const aspect = canvas.height / canvas.width;
+      return {
+        x: (x / canvas.width - 0.5) * 3.0 / zoom + offsetX,
+        y: (y / canvas.height - 0.5) * 3.0 * aspect / zoom + offsetY,
+      };
+    }
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const before = toComplexCoords(cx, cy);
+
+      zoom *= e.deltaY < 0 ? 1.1 : 0.9;
+      const after = toComplexCoords(cx, cy);
+      offsetX += before.x - after.x;
+      offsetY += before.y - after.y;
+
+      redraw();
+    });
+
+    canvas.addEventListener('mousedown', e => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    canvas.addEventListener('mouseup', () => dragging = false);
+    canvas.addEventListener('mouseleave', () => dragging = false);
+
+    canvas.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      const scale = 3.0 / zoom / canvas.width;
+      const aspect = canvas.height / canvas.width;
+      offsetX -= dx * scale;
+      offsetY += dy * scale * aspect;
+      redraw();
+    });
+
+    let Module = {
+      onRuntimeInitialized() {
+        redraw();
+      }
+    };
+  </script>
+</body>
+</html>
