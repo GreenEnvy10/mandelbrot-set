@@ -1,7 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-canvas.width = 7680;
-canvas.height = 4320;
+canvas.width = 1920;
+canvas.height = 1080;
 
 let zoom = 1;
 let offsetX = -0.5;
@@ -12,7 +12,7 @@ let dragStartX, dragStartY;
 function drawMandelbrot() {
   const imgData = ctx.createImageData(canvas.width, canvas.height);
   const data = imgData.data;
-  const maxIter = 1000;
+  const maxIter = 250;
 
   const w = canvas.width;
   const h = canvas.height;
