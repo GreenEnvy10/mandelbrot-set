@@ -33,11 +33,28 @@ function drawMandelbrot() {
         zi = 2 * zr * zi + ci;
         zr = temp;
       }
+
       const index = 4 * (y * w + x);
-      const shade = i === maxIter ? 0 : Math.floor(255 * i / maxIter);
-      data[index] = shade;
-      data[index + 1] = shade;
-      data[index + 2] = shade;
+
+      let r = 0, g = 0, b = 0;
+      if (i === maxIter) {
+        // Inside Mandelbrot set
+        r = g = b = 0;
+      } else {
+        // Smooth coloring (electric blue gradient)
+        const log_zn = Math.log(zr * zr + zi * zi) / 2;
+        const nu = Math.log(log_zn / Math.log(2)) / Math.log(2);
+        const smooth = i + 1 - nu;
+        const t = smooth / maxIter;
+
+        r = Math.floor(255 * Math.pow(t, 0.3));              // Slight red tint
+        g = Math.floor(255 * Math.pow(t, 0.6));              // Green middle
+        b = Math.floor(255 * (1 - Math.pow(1 - t, 4)));      // Strong blue outer
+      }
+
+      data[index] = r;
+      data[index + 1] = g;
+      data[index + 2] = b;
       data[index + 3] = 255;
     }
   }
